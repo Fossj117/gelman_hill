@@ -109,3 +109,63 @@ vals %>% ggplot(aes(x=out), family = "Courier") +
 
 ![](Ch2_ex_files/figure-html/unnamed-chunk-4-1.png) 
 
+### Q4 
+
+The heights of men in the US are approx normally dist w/ mean 69.1 and std. 2.9 in. Women are 63.7 inches on avg. w/ std. 2.7. Let:
+
+* $x$ be the average height of 100 randomly sampled men
+* $y$ be the average height of 100 randomly sampled women
+
+Let's create some simulations: 
+
+
+```r
+n_runs <- 1000
+
+x_mu <- 69.1 
+x_sd <- 2.9 
+
+y_mu <- 63.7 
+y_sd <- 2.7
+
+data.frame(results = replicate(n_runs, mean(rnorm(100, mean = x_mu, sd = x_sd)) - mean(rnorm(100, mean = y_mu, sd = y_sd)))) -> x_y_sims
+
+x_y_sims %>% ggplot(aes(x=results)) + geom_histogram() + ggtitle("Histogram of simulation results for x - y")
+```
+
+![](Ch2_ex_files/figure-html/unnamed-chunk-5-1.png) 
+
+The simulation mean is 5.4221536 and the simulation standard deviation is 0.4007466. What are the theoretical results? 
+
+
+```r
+y_sampling_dist_sd <- sqrt((y_sd^2)/100)
+x_sampling_dist_sd <- sqrt((x_sd^2)/100)
+
+y_sampling_dist_mu <- y_mu
+x_sampling_dist_mu <- x_mu
+
+diff_mu <- x_mu - y_mu
+diff_sd <- sqrt(x_sampling_dist_sd^2 + y_sampling_dist_sd^2)
+```
+
+So the expected mean is 5.4 and the expected sd is 0.3962323. This is very close to the observed results.
+
+### Q5 
+
+Suppose that the heights of husbands and wives have a correlations of 0.3. Let $x$ and $y$ be the heigts of a married couple chosen at random. What are the mean and standard deviation of the average height, $(x+y)/2$. 
+
+Using same info as above: 
+
+
+```r
+rho <- 0.3
+
+# mean (divided by 2 for avg.)
+mu_expected <- (x_mu + y_mu)/2
+
+# standard dev of correlated vars (divided by 2 for avg.)
+sd_expected <- sqrt(x_sd^2 + y_sd^2 + 2*rho*x_sd*y_sd)/2
+```
+
+So the mean and standard deviation of the average height are 66.4 and 2.2582073 respectively. 
