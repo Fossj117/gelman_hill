@@ -1,0 +1,122 @@
+---
+title: "Chapter 3"
+author: "Jeff Fossett"
+date: "September 4, 2015"
+output: 
+  html_document:
+    keep_md: true 
+---
+
+## Notes
+
+* Running a model with full interactions is equivalent to running the individual model separately within each subset of the data. 
+* When to look for interactions? When inputs have large main effects, it's a good idea to look for interactions. 
+
+Definitions: 
+
+* Units: Answer to "What is the unit of analysis?" e.g. "persons" or "schools"
+* Predictors: the $X$ variables in the regression
+* Outcome: The outcome or $Y$ variable. 
+* Inputs: Information on the units that goes into the $X$-variables. Inputs are not the same as predictors. 
+
+Not so familiar with the notion of multivariate distribution. If $x$ is a $k$-dimensional random vector $x = [x_1, x_2, ..., x_k]$, then we can write that it has a multivariate normal distribution like: 
+
+$$  x \sim \mathcal{N}(\mu, \Sigma) $$
+
+Where $u$ is the vector of means $[u_1, u_2, ..., u_k]$ of the R.Vs and $\Sigma$ is the $k \times k$ covariance matrix: 
+
+$$ \Sigma = [\mathrm{Cov}[X_i, X_j]], i= 1,2,...k; j = 1,2,..., k$$
+
+So if we say that we can write the linear regression model in notation like so: 
+
+$$ y \sim \mathcal{N}(X\beta, \sigma^2I) $$ 
+
+That means $X\beta$ gives the vector of deterministic expected values. And then deviations from each of those follow a normal distribution with s.d. $\sigma^2$ (and they are indepenent since cov matrix has only diagonal). 
+
+Least squares: the estimate $\hat{\beta}$ that minimizes sum of squared errors, $\sum_{i=1}^n(y_i - X_i\hat{\beta})^2$ for the data $X, y$.
+
+We are trying to minimize the error in our prediction of $y$. 
+
+Note that the OLS estimate is also the MLE estimate if the errors $\epsilon_i$ are independent with equal variance and normally distributed. 
+
+Can express OLS estimator in matrix form like: $$\hat{\beta} = (X^tX)^{-1}X^ty$$
+
+What matters: $\hat{\beta}$ is a linear function of $y$. 
+
+# Exercises 
+
+1. Read in the `pyth` data & fit the model: 
+
+```{r}
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+
+# read data 
+p <- read.csv('pyth.tsv', sep=' ')
+p %>% head(40) -> p_head
+
+# What does it look like? 
+
+# Hist
+p_head %>% 
+  select(x1, x2) %>% 
+  gather(var, val) %>% 
+  ggplot(aes(x=val)) + geom_histogram() + facet_grid(.~var)
+```
+
+```{r}
+p_head %>% ggplot(aes(x=x1, y =y)) + geom_point() + ggtitle("Y vs. X1")
+```
+
+X1 doesn't seem to have a clear linear association with y. 
+
+```{r}
+p_head %>% ggplot(aes(x=x2, y =y)) + geom_point() + ggtitle("Y vs. X2")
+```
+
+There is a strong linear relationship between X2 and y. 
+
+Here is X1 vs X2: 
+
+```{r}
+p_head %>% ggplot(aes(x=x1, y =x2)) + geom_point() + ggtitle("X1 vs. X2")
+```
+
+Fit the model: 
+
+```{r}
+l <- lm(y ~ x1+x2, data=p_head)
+
+s <- summary(l)
+
+s
+```
+
+We see that both coefficients are significant and positive. For a unit increase in x1 we expect an increase of `r coef(l)[2]`; for a unit increase in x2, we expect and increas of `r coef(l)[3]`. The r-squared for the model is high: `r s$r.squared`.
+
+Here is a plot of the distribution of residuals: 
+
+```{r}
+p_head$resids <- l$residuals
+
+p_head %>% ggplot(aes(x=resids, bindwidth = 0.5)) + geom_histogram() + ggtitle("Distribution of residuals")
+```
+
+Here is the residuals plotted against each of X1 and X2: 
+
+```{r}
+p_head %>% ggplot(aes(y=resids, x=x1)) + geom_point() + ggtitle("X1 vs. Residuals")
+```
+
+```{r}
+p_head %>% ggplot(aes(y=resids, x=x2)) + geom_point() + ggtitle("X2 vs. Residuals")
+```
+
+Let's make predictions: 
+
+```{r, results='asis'}
+library(knitr)
+
+predict(l, p %>% tail(20), interval='prediction') %>% kable()
+```
